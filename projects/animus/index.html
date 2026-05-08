@@ -10,33 +10,51 @@ Talk to the world around you.
 AI-powered web app that identifies any physical object via camera, gives it a personality, and lets you have a full voice conversation with it as itself. Point at your microphone — it speaks its opening line immediately in its own voice. Speak back in any language, it responds in kind. Every object gets a distinct voice and speaking style matched to its personality. Deployed and live.
 </p>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">The Idea</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <p>
 What if the objects around you could speak? Not as assistants, not as tools — as themselves, with personality and perspective. It's an experiment in what becomes possible when AI understands the physical world well enough to give it a voice. The same pipeline — camera, vision AI, voice in, voice out — is what next-generation wearables and smart glasses will run. This is that, in a browser.
-</p>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">What I Built</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <ul class="list-disc pl-5 space-y-2 text-text-secondary"> <li>React + Vite frontend with a custom cyberpunk AR aesthetic — scanlines, glitch text, neon cyan/magenta, chromatic aberration</li> <li>Gemini Vision API for object identification, personality generation, and voice selection — Gemini picks the voice and speaking style based on the object's perceived personality</li> <li>Gemini Chat API for stateless in-character conversation — 3-sentence response format where sentences 1+2 are always under 155 chars (speakable), sentence 3 is free</li> <li>Groq Whisper (<code>whisper-large-v3-turbo</code>) for STT with automatic language detection — hold to speak, release to send</li> <li>Groq Orpheus TTS (<code>canopylabs/orpheus-v1-english</code>) — 6 voices matched to object personality, vocal direction tags (dramatic, calm, cheerful, etc.) prepended to control delivery</li> <li>Multilingual voice pipeline — Whisper detects language, Gemini responds in that language, Web Speech API handles non-English TTS</li> <li>Scan history — every terminated conversation saved client-side, resumable without re-scanning</li> <li>Spatial markers — neon anchor dots placed at scan positions on the camera view, tap to resume</li> <li>Object connection mode — scan a second object to put two objects in conversation with each other; user controls pace and can interject between turns</li> <li>WebXR + Three.js integration — ARCore hit testing for real 3D spatial marker placement on Android Chrome; screen-coordinate fallback on all other devices</li> <li>AR camera effects — tap ripple, recognition beat (object name flashes on scan complete)</li> <li>Ghost audio prevention — <code>isMounted</code> ref guards all async audio play calls after panel unmount</li> <li>Vercel serverless API routes: <code>/api/gemini</code>, <code>/api/transcribe</code>, <code>/api/speak</code></li> </ul>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">Architecture</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <pre class="bg-surface border border-border-subtle p-6 rounded-lg text-text-secondary overflow-x-auto font-mono text-sm">Landing page → [INITIATE] → camera view
+</p>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">What I Built</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <ul class="list-disc pl-5 space-y-2 text-text-secondary"> <li>React + Vite frontend with a custom cyberpunk AR aesthetic — scanlines, glitch text, neon cyan/magenta, chromatic aberration</li> <li>Gemini Vision API for object identification, personality generation, and voice selection — Gemini picks the voice and speaking style based on the object's perceived personality</li> <li>Gemini Chat API for stateless in-character conversation — 3-sentence response format where sentences 1+2 are always under 155 chars (speakable), sentence 3 is free</li> <li>Groq Whisper (<code>whisper-large-v3-turbo</code>) for STT with automatic language detection — hold to speak, release to send</li> <li>Groq Orpheus TTS (<code>canopylabs/orpheus-v1-english</code>) — 6 voices matched to object personality, vocal direction tags (dramatic, calm, cheerful, etc.) prepended to control delivery</li> <li>Multilingual voice pipeline — Whisper detects language, Gemini responds in that language, Web Speech API handles non-English TTS</li> <li>Scan history — every terminated conversation saved client-side, resumable without re-scanning</li> <li>Spatial markers — neon anchor dots placed at scan positions on the camera view, tap to resume</li> <li>Object connection mode — scan a second object to put two objects in conversation with each other; user controls pace and can interject between turns</li> <li>WebXR + Three.js integration — ARCore hit testing for real 3D spatial marker placement on Android Chrome; screen-coordinate fallback on all other devices</li> <li>AR camera effects — tap ripple, recognition beat (object name flashes on scan complete)</li> <li>Ghost audio prevention — <code>isMounted</code> ref guards all async audio play calls after panel unmount</li> <li>Vercel serverless API routes: <code>/api/gemini</code>, <code>/api/transcribe</code>, <code>/api/speak</code></li> </ul>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">Architecture</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <p class="text-text-secondary mb-4">The frontend is structured around a custom hook layer that keeps <code>App.jsx</code> as a lean layout shell (~110 lines) and isolates concerns cleanly.</p> <pre class="bg-surface border border-border-subtle p-6 rounded-lg text-text-secondary overflow-x-auto font-mono text-sm mb-6">src/
+├── App.jsx                  # Layout/routing shell only
+├── hooks/
+│   ├── useAnimusState.js    # All domain state + handlers
+│   ├── useGemini.js         # Vision, chat, debate API calls
+│   ├── useWebXR.js          # AR session, hit testing, markers
+│   ├── useAudio.js          # Orpheus TTS + Web Speech fallback
+│   └── useRecording.js      # Mic recording + Whisper STT
+├── components/              # Pure UI components
+└── lib/
+    └── three-scene.js       # ARSceneManager — WebXR + Three.js</pre> <p class="text-text-secondary mb-4">Request flow:</p> <pre class="bg-surface border border-border-subtle p-6 rounded-lg text-text-secondary overflow-x-auto font-mono text-sm">Landing page → [INITIATE] → camera view
 
 Camera feed (browser MediaDevices API)
     ↓ screen tap or scan button
-Tap ripple → frame capture → base64 JPEG
+useAnimusState → TapRipple → captureFrame() → base64 JPEG
     ↓
 /api/gemini — action: 'vision'
-    Gemini identifies object, generates personality,
-    opening line, voice, vocal_direction
+    Gemini → object_type, personality, opening_line, voice, vocal_direction
     ↓
 ObjectCard → [INITIATE LINK]
     ↓
     ├─ Solo: ChatPanel
-    │       Object speaks opening line via Orpheus automatically
-    │       Hold mic → /api/transcribe (Groq Whisper) → language detected
-    │       /api/gemini chat → 3-sentence response
-    │       /api/speak → Orpheus TTS with matched voice + direction
-    │       [Terminate] → saves to scan history + spatial marker
+    │       useAudio → speakReply(opening_line) on mount
+    │       useRecording → hold mic → /api/transcribe (Groq Whisper)
+    │       /api/gemini chat → 3-sentence response (1+2 ≤155 chars)
+    │       useAudio → speakReply(response, language, voice, direction)
+    │           ├─ English: /api/speak → Orpheus wav → Audio()
+    │           └─ Non-English / fallback: Web Speech API (BCP-47)
+    │       [✕ END] → scan history + spatial marker
     │
     └─ Connect: DebatePanel (if scan history exists)
-            Object A speaks → pause → user optionally interjects
-            → [CONTINUE] → Object B responds to A + user
-            → alternates until [End]
+            Object A → /api/gemini debate → useAudio speakReply
+            pause → user interjects (text or mic) → [CONTINUE →]
+            Object B responds to A + user → speakReply → pause
+            alternates until [✕ END]
 
-/api/speak — sanitizes, extracts first 2 sentences,
-    prepends [direction] tag, calls Orpheus (≤199 chars)
-    fallback: Web Speech API with BCP-47 language tag</pre>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">Screenshots</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <div class="grid gap-8 my-12 grid-cols-1 md:grid-cols-2"> <div class="flex flex-col"> <div class="rounded-lg overflow-hidden border border-border-subtle shadow-sm bg-surface mb-3 flex items-center justify-center bg-gray-100 aspect-video">  <img src="/Animus_card.PNG" alt="Animus object card" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"> </div> <p class="text-sm text-text-secondary text-center italic"> Object identified — Studio Microphone </p> </div><div class="flex flex-col"> <div class="rounded-lg overflow-hidden border border-border-subtle shadow-sm bg-surface mb-3 flex items-center justify-center bg-gray-100 aspect-video">  <img src="/Animus_chat.PNG" alt="Animus chat interface" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"> </div> <p class="text-sm text-text-secondary text-center italic"> Conversation with the microphone </p> </div> </div>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">Why It Matters</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <p>
+/api/speak — sanitize → first 2 sentences → [direction] tag
+    → Orpheus ≤199 chars → wav stream
+
+WebXR (Android Chrome + ARCore)
+    useWebXR → requestSession('immersive-ar') → hit test source
+    on scan: captureHitPosition() → THREE.Vector3
+    on terminate: addARMarker() → 3D sphere in scene
+    getMarkerScreenPositions() → SpatialMarkers DOM labels
+    Fallback: clientX/clientY screen coordinates</pre>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">Screenshots</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <div class="grid gap-8 my-12 grid-cols-1 md:grid-cols-2"> <div class="flex flex-col"> <div class="rounded-lg overflow-hidden border border-border-subtle shadow-sm bg-surface mb-3 flex items-center justify-center bg-gray-100 aspect-video">  <img src="/Animus_card.PNG" alt="Animus object card" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"> </div> <p class="text-sm text-text-secondary text-center italic"> Object identified — Studio Microphone </p> </div><div class="flex flex-col"> <div class="rounded-lg overflow-hidden border border-border-subtle shadow-sm bg-surface mb-3 flex items-center justify-center bg-gray-100 aspect-video">  <img src="/Animus_chat.PNG" alt="Animus chat interface" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"> </div> <p class="text-sm text-text-secondary text-center italic"> Conversation with the microphone </p> </div> </div>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">Why It Matters</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <p>
 Animus demonstrates end-to-end audio AI on physical objects: vision understanding, language-aware LLM response, neural TTS with personality-matched voice, and spatial anchoring via WebXR. The object connection mode shows multi-agent LLM coordination — two separate Gemini sessions maintaining their own conversation history and responding to each other in real time.
 </p> <p class="mt-4">
 The AR layer — hit testing, spatial markers, dom-overlay compositing — is a direct implementation of the same primitives that run on HoloLens and ARCore production systems. It's also the web-layer prototype of the ideas in the ARCore + Gemini depth research project.
