@@ -4,9 +4,13 @@ VARUN_KAPOOR
 Animus for Meta Ray-Ban Display glasses.
 </p> <div class="flex flex-wrap gap-4 mt-8"> <a href="https://github.com/VarunKapoor0/AnimusGlasses" target="_blank" rel="noopener noreferrer" class="font-mono text-sm uppercase tracking-widest text-accent-cyan border border-accent-cyan px-6 py-3 rounded-none hover:bg-accent-cyan/10 transition-colors hover:shadow-[0_0_20px_rgba(0,212,255,0.2)]">
 [VIEW SOURCE &rarr;]
+</a> <a href="/AnimusGlasses.apk" download class="font-mono text-sm uppercase tracking-widest text-accent-cyan border border-accent-cyan px-6 py-3 rounded-none hover:bg-accent-cyan/10 transition-colors hover:shadow-[0_0_20px_rgba(0,212,255,0.2)]">
+[DOWNLOAD APK &rarr;]
 </a> <a href="/projects/animus" class="font-mono text-sm uppercase tracking-widest text-accent-magenta border border-accent-magenta px-6 py-3 rounded-none hover:bg-accent-magenta/10 transition-colors hover:shadow-[0_0_20px_rgba(255,45,120,0.2)]">
 [WEB VERSION &rarr;]
-</a> </div> </header> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">What It Does</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <p>
+</a> </div> <p class="font-mono text-xs text-text-secondary mt-4 opacity-60">
+Requires Meta Ray-Ban glasses (Gen 1, Gen 2, or Display) + Meta AI app on Android. Enable Developer Mode on glasses before installing.
+</p> </header> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">What It Does</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <p>
 Point your Meta Ray-Ban Display glasses at any object. Gemini Vision identifies it through the glasses camera, generates a personality, and speaks its opening line through the glasses speakers. Talk back through the companion Android app. The object responds in character.
 </p> <p class="mt-4">
 The camera input comes from the glasses. The audio output goes to the glasses speakers via Bluetooth A2DP. The phone handles all AI processing. Built on the Meta Wearables Device Access Toolkit (DAT SDK v0.6.0), demoed on Meta Ray-Ban Display glasses.
@@ -14,7 +18,7 @@ The camera input comes from the glasses. The audio output goes to the glasses sp
 Animus started as a web app — point your phone camera at an object, it speaks to you in its own voice. The glasses version is what it was always pointing toward. The same pipeline — camera in, vision AI, voice out — but now the camera is on your face and the voice comes from your ear. No screen interaction required for the core loop.
 </p> <p class="mt-4">
 This is the interaction model that smart glasses platforms like AirCaps, Mentra, and Brilliant Labs are building toward. AnimusGlasses is an independent implementation of that loop, built in one day on consumer hardware.
-</p>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">What I Built</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <ul class="list-disc pl-5 space-y-2 text-text-secondary"> <li>Android companion app in Kotlin + Jetpack Compose — session management, UI, all AI processing</li> <li>Meta Wearables DAT SDK integration — device registration, session creation, camera stream management</li> <li>I420 YUV frame conversion — glasses stream raw I420 frames over Bluetooth; converted to JPEG in-app for Gemini Vision</li> <li>Gemini 2.5 Flash Vision — object identification, personality generation, opening line, voice selection</li> <li>Groq Orpheus TTS — neural voice synthesis routed to glasses speakers via Bluetooth A2DP</li> <li>Groq Whisper STT — voice input from phone mic, transcribed and sent to Gemini chat</li> <li>SDK permission flow — <code>Wearables.RequestPermissionContract()</code> for glasses camera access through Meta AI app</li> <li>Registration state management — checks existing registration before re-triggering the Meta AI authorization flow</li> <li>Full in-character conversation loop — object maintains personality across multiple exchanges</li> <li>API keys injected via BuildConfig from <code>local.properties</code> — never committed to source</li> </ul>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">Architecture</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <p class="text-text-secondary mb-4">The phone is the processing layer. The glasses are sensors and speakers.</p> <pre class="bg-surface border border-border-subtle p-6 rounded-lg text-text-secondary overflow-x-auto font-mono text-sm mb-6">app/src/main/java/com/varun/animusglasses/
+</p>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">What I Built</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <ul class="list-disc pl-5 space-y-2 text-text-secondary"> <li>Android companion app in Kotlin + Jetpack Compose — session management, UI, all AI processing</li> <li>Meta Wearables DAT SDK integration — device registration, session creation, camera stream management</li> <li>I420 YUV frame conversion — glasses stream raw I420 frames over Bluetooth; converted to JPEG in-app for Gemini Vision</li> <li>Gemini 2.5 Flash Vision — object identification, personality generation, opening line, voice selection</li> <li>Groq Orpheus TTS — neural voice synthesis routed to glasses speakers via Bluetooth A2DP</li> <li>Groq Whisper STT — voice input from phone mic, transcribed and sent to Gemini chat</li> <li>SDK permission flow — <code>Wearables.RequestPermissionContract()</code> for glasses camera access through Meta AI app</li> <li>Registration state management — checks existing registration before re-triggering the Meta AI authorization flow</li> <li>All API calls routed through the Animus backend — no keys in the APK, safe to distribute</li> <li>Full in-character conversation loop — object maintains personality across multiple exchanges</li> </ul>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">Architecture</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <p class="text-text-secondary mb-4">The phone is the processing layer. The glasses are sensors and speakers.</p> <pre class="bg-surface border border-border-subtle p-6 rounded-lg text-text-secondary overflow-x-auto font-mono text-sm mb-6">app/src/main/java/com/varun/animusglasses/
 ├── AnimusApplication.kt     # Wearables.initialize() on app start
 ├── MainActivity.kt          # Android + SDK permission flow, Compose UI host
 ├── AnimusViewModel.kt       # Session, stream, Gemini, TTS, STT, frame conversion
@@ -24,9 +28,9 @@ This is the interaction model that smart glasses platforms like AirCaps, Mentra,
     | I420 YUV frames over Bluetooth (Meta Wearables DAT SDK)
 Android companion app
     | i420ToBitmap() -- JPEG -- base64
-Gemini 2.5 Flash Vision API
+animusai.app/api/gemini (vision)
     | object_type, personality_summary, opening_line, voice, vocal_direction
-Groq Orpheus TTS -- WAV audio
+animusai.app/api/speak -- Groq Orpheus TTS -- WAV audio
     | AudioTrack -- Bluetooth A2DP -- glasses speakers
 
 SDK session flow:
@@ -36,8 +40,8 @@ SDK session flow:
     -- Wearables.createSession(AutoDeviceSelector())
     -- session.addStream(StreamConfiguration(MEDIUM, 7fps))
     -- stream.videoStream frames -- i420BufferToJpeg()
-    -- user taps Scan -- Gemini Vision -- personality -- TTS -- glasses speakers
-    -- user speaks/types -- Gemini chat -- TTS -- glasses speakers</pre>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">Why It Matters</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <p>
+    -- user taps Scan -- vision API -- personality -- TTS -- glasses speakers
+    -- user speaks/types -- chat API -- TTS -- glasses speakers</pre>  </div> </section> <section class="mb-16"> <h2 class="text-2xl font-bold text-text-primary mb-6">Why It Matters</h2> <div class="prose prose-lg text-text-secondary max-w-none">  <p>
 The Meta Wearables DAT SDK is in public developer preview — very few independent developers have shipped anything on it. AnimusGlasses demonstrates the full camera-to-voice pipeline on real glasses hardware: I420 frame conversion, SDK session management, Bluetooth audio routing, and AI at every layer. It's not a demo app — it's a working product loop built in a day on a platform that most developers haven't touched.
 </p> <p class="mt-4">
 The same architecture — glasses camera, vision AI, voice response through speakers — is the core loop of every smart glasses AI product being built right now. This is that, running on consumer hardware, open source.
